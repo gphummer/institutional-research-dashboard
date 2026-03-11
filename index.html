@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etherealize — Institutional Blockchain Research Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface-2: #1a2236;
+    --border: #1e293b;
+    --border-light: #2d3a52;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --accent: #3b82f6;
+    --accent-dim: #1e40af;
+    --green: #22c55e;
+    --green-dim: #14532d;
+    --amber: #f59e0b;
+    --amber-dim: #78350f;
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --purple: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(180deg, #0f1729 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2rem 1.5rem;
+  }
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .header-brand .logo {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .header-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .header-meta span { display: flex; align-items: center; gap: 0.35rem; }
+
+  .main { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .nav button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .nav button:hover { border-color: var(--accent); color: var(--text); }
+  .nav button.active { background: var(--accent-dim); border-color: var(--accent); color: #fff; }
+
+  /* Sections */
+  .section {
+    margin-bottom: 2rem;
+    display: none;
+  }
+
+  .section.active { display: block; }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+
+  .section-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  thead { background: var(--surface-2); }
+
+  th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59, 130, 246, 0.04); }
+
+  .metric-label {
+    color: var(--text-muted);
+    font-weight: 500;
+    min-width: 200px;
+    white-space: normal;
+  }
+
+  /* Chain column headers */
+  .chain-header {
+    text-align: center;
+    min-width: 140px;
+  }
+
+  .chain-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text);
+    display: block;
+  }
+
+  .chain-ticker {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  td.chain-cell { text-align: center; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-muted { background: var(--surface-2); color: var(--text-dim); }
+
+  /* Score cards */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+  }
+
+  .score-card .chain-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .score-card .score {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .score-card .score-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .score-high { color: var(--green); border-top: 3px solid var(--green); }
+  .score-mid { color: var(--amber); border-top: 3px solid var(--amber); }
+  .score-low { color: var(--red); border-top: 3px solid var(--red); }
+  .score-na { color: var(--text-dim); border-top: 3px solid var(--border); }
+
+  /* Bar charts */
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .bar-label {
+    width: 90px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 24px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+    min-width: fit-content;
+  }
+
+  .bar-value {
+    width: 100px;
+    font-size: 0.78rem;
+    color: var(--text);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Chart container */
+  .chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  /* Two column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Notes */
+  .notes {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .notes h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
+  }
+
+  .notes p, .notes li {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .notes ul { padding-left: 1.25rem; }
+  .notes li { margin-bottom: 0.25rem; }
+
+  /* Tooltip-style info */
+  .info-icon {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    text-align: center;
+    line-height: 14px;
+    cursor: help;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+  }
+
+  /* Highlight Ethereum column */
+  .eth-col { background: rgba(59, 130, 246, 0.05); }
+
+  /* Footnotes */
+  .footnote { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.5rem; }
+
+  /* Pass/Fail visual */
+  .pf-pass { color: var(--green); font-weight: 600; }
+  .pf-fail { color: var(--red); font-weight: 600; }
+  .pf-semi { color: var(--amber); font-weight: 600; }
+  .pf-na { color: var(--text-dim); }
+
+  /* Live data indicators */
+  .live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .live-tag {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--green);
+    opacity: 0.7;
+    vertical-align: super;
+    margin-left: 2px;
+  }
+
+  .refresh-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .refresh-btn:hover { border-color: var(--accent); color: var(--text); }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <span class="logo">Etherealize Research</span>
+    </div>
+    <h1>Institutional Blockchain Infrastructure Dashboard</h1>
+    <p class="header-sub">Comparative analysis of blockchain networks for institutional capital markets infrastructure</p>
+    <div class="header-meta">
+      <span>Chains: 6</span>
+      <span>Metrics: 25+</span>
+      <span id="data-status">Loading live data...</span>
+      <span>Classification: Internal / BD Use Only</span>
+      <span><button class="refresh-btn" onclick="refreshDashboard()" id="refresh-btn">Refresh</button></span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="nav">
+    <button class="active" onclick="showSection('overview')">Overview</button>
+    <button onclick="showSection('decentralization')">Decentralization</button>
+    <button onclick="showSection('infrastructure')">Infrastructure</button>
+    <button onclick="showSection('governance')">Governance & Trust</button>
+    <button onclick="showSection('ecosystem')">Ecosystem & Adoption</button>
+    <button onclick="showSection('risk')">Risk Assessment</button>
+    <button onclick="showSection('methodology')">Methodology</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="overview">
+    <h2 class="section-title">Network Overview</h2>
+    <p class="section-desc">High-level comparison across six blockchain networks evaluated for institutional capital markets suitability.</p>
+
+    <div class="score-grid">
+      <div class="score-card score-mid">
+        <div class="chain-label">Bitcoin</div>
+        <div class="score">B+</div>
+        <div class="score-label">Store of Value / Limited Programmability</div>
+      </div>
+      <div class="score-card score-high">
+        <div class="chain-label">Ethereum</div>
+        <div class="score">A</div>
+        <div class="score-label">Full-Stack Financial Infrastructure</div>
+      </div>
+      <div class="score-card score-low">
+        <div class="chain-label">Solana</div>
+        <div class="score">C+</div>
+        <div class="score-label">High Performance / Centralization Risk</div>
+      </div>
+      <div class="score-card score-low">
+        <div class="chain-label">Tron</div>
+        <div class="score">C</div>
+        <div class="score-label">Stablecoin Rail / Governance Concerns</div>
+      </div>
+      <div class="score-card score-low">
+        <div class="chain-label">Ripple (XRP)</div>
+        <div class="score">D+</div>
+        <div class="score-label">Permissioned / Single-Entity Risk</div>
+      </div>
+      <div class="score-card score-na">
+        <div class="chain-label">Canton</div>
+        <div class="score">D</div>
+        <div class="score-label">Consortium / Unproven at Scale</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span><span class="chain-ticker">BTC</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span><span class="chain-ticker">ETH</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span><span class="chain-ticker">SOL</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span><span class="chain-ticker">TRX</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span><span class="chain-ticker">XRP</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span><span class="chain-ticker">CST</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Network Type</td>
+            <td class="chain-cell">Permissionless</td>
+            <td class="chain-cell eth-col">Permissionless</td>
+            <td class="chain-cell">Permissionless*</td>
+            <td class="chain-cell">Delegated PoS</td>
+            <td class="chain-cell">Permissioned</td>
+            <td class="chain-cell">Consortium</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Consensus</td>
+            <td class="chain-cell">Proof of Work</td>
+            <td class="chain-cell eth-col">Proof of Stake</td>
+            <td class="chain-cell">Proof of History + PoS</td>
+            <td class="chain-cell">Delegated PoS</td>
+            <td class="chain-cell">RPCA (Federated)</td>
+            <td class="chain-cell">Canton Protocol</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Age</td>
+            <td class="chain-cell">16.4 years</td>
+            <td class="chain-cell eth-col">9.8 years</td>
+            <td class="chain-cell">5.2 years <span class="badge badge-amber">Beta</span></td>
+            <td class="chain-cell">6.8 years</td>
+            <td class="chain-cell">12.4 years</td>
+            <td class="chain-cell">~3 years</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Operator Count</td>
+            <td class="chain-cell">12 pools</td>
+            <td class="chain-cell eth-col"><strong>~74,000</strong></td>
+            <td class="chain-cell">1,020&ndash;1,240</td>
+            <td class="chain-cell">27 delegates</td>
+            <td class="chain-cell">180 <span class="badge badge-red">Perm.</span></td>
+            <td class="chain-cell">Consortium only</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Total Ecosystem Value</td>
+            <td class="chain-cell"><strong>$2.08T</strong></td>
+            <td class="chain-cell eth-col">$723.9B</td>
+            <td class="chain-cell">$138.4B</td>
+            <td class="chain-cell">$109.6B</td>
+            <td class="chain-cell">$129.4B</td>
+            <td class="chain-cell">$4.3B</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Stablecoin TVL</td>
+            <td class="chain-cell pf-na">N/A</td>
+            <td class="chain-cell eth-col"><strong>$122.5B</strong></td>
+            <td class="chain-cell">$11.5B</td>
+            <td class="chain-cell">$77.1B</td>
+            <td class="chain-cell">$72M</td>
+            <td class="chain-cell">$0</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Tokenized Asset TVL</td>
+            <td class="chain-cell pf-na">N/A</td>
+            <td class="chain-cell eth-col"><strong>$15.2B</strong></td>
+            <td class="chain-cell">$1.7B</td>
+            <td class="chain-cell">$0</td>
+            <td class="chain-cell">$453.6M</td>
+            <td class="chain-cell">Not listed</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Primary Use Case</td>
+            <td class="chain-cell">Store of Value</td>
+            <td class="chain-cell eth-col">Finance</td>
+            <td class="chain-cell">Memes / DeFi</td>
+            <td class="chain-cell">USDT Transfers</td>
+            <td class="chain-cell">RLUSD</td>
+            <td class="chain-cell">Enterprise Settlement</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Downtime (Lifetime)</td>
+            <td class="chain-cell">108 hrs</td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">0 hrs</span></td>
+            <td class="chain-cell"><span class="badge badge-red">160+ hrs</span></td>
+            <td class="chain-cell">3.4 hrs</td>
+            <td class="chain-cell">1 hr + 2wk data loss</td>
+            <td class="chain-cell">Unknown</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Governance</td>
+            <td class="chain-cell"><span class="pf-pass">Decentralized</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Decentralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">* Solana uses Stake-Weighted QoS (SWQoS), which in practice reduces the effective power of smaller validators and further centralizes the network. Still designated "mainnet beta" as of Q1 2026.</p>
+  </div>
+
+  <!-- DECENTRALIZATION -->
+  <div class="section" id="decentralization">
+    <h2 class="section-title">Decentralization & Network Security</h2>
+    <p class="section-desc">Validator distribution, operator independence, and the ability for the network to survive foundation failure.</p>
+
+    <div class="chart-section">
+      <div class="chart-title">Operator Count (Independent Validators / Mining Pools)</div>
+      <div class="bar-row">
+        <div class="bar-label">Bitcoin</div>
+        <div class="bar-track"><div class="bar-fill" style="width:1.6%;background:var(--amber);min-width:40px">12</div></div>
+        <div class="bar-value">12 pools</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ethereum</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)">~74,000</div></div>
+        <div class="bar-value">~74,000</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Solana</div>
+        <div class="bar-track"><div class="bar-fill" style="width:1.7%;background:var(--red);min-width:55px">1,020&ndash;1,240</div></div>
+        <div class="bar-value">1,020&ndash;1,240</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Tron</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0.5%;background:var(--red);min-width:30px">27</div></div>
+        <div class="bar-value">27 delegates</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ripple</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0.5%;background:var(--red);min-width:50px">180 (Perm.)</div></div>
+        <div class="bar-value">180 (Permissioned)</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Canton</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0.5%;background:var(--text-dim);min-width:70px">Consortium</div></div>
+        <div class="bar-value">Undisclosed</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Nakamoto Coefficient<span class="info-icon" title="Minimum number of entities to collude to attack/control the network">?</span></td>
+            <td class="chain-cell">2</td>
+            <td class="chain-cell eth-col"><strong>31</strong></td>
+            <td class="chain-cell">43&ndash;81</td>
+            <td class="chain-cell">19</td>
+            <td class="chain-cell">144 <span class="badge badge-red">Perm.</span></td>
+            <td class="chain-cell pf-na">N/A</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Total Node Count</td>
+            <td class="chain-cell">22,274</td>
+            <td class="chain-cell eth-col">14,212</td>
+            <td class="chain-cell">5,844</td>
+            <td class="chain-cell">8,008</td>
+            <td class="chain-cell">968</td>
+            <td class="chain-cell pf-na">Undisclosed</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Independent Operator Count</td>
+            <td class="chain-cell">12</td>
+            <td class="chain-cell eth-col"><strong>~74,000</strong></td>
+            <td class="chain-cell">1,020&ndash;1,240*</td>
+            <td class="chain-cell">27</td>
+            <td class="chain-cell">180</td>
+            <td class="chain-cell pf-na">Consortium members</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Home Validator Accessible</td>
+            <td class="chain-cell"><span class="pf-pass">Yes</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Yes</span></td>
+            <td class="chain-cell"><span class="pf-fail">No</span></td>
+            <td class="chain-cell"><span class="pf-fail">No</span></td>
+            <td class="chain-cell"><span class="pf-fail">No</span></td>
+            <td class="chain-cell"><span class="pf-fail">No</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Consensus Geographic Distribution</td>
+            <td class="chain-cell pf-semi">USA-centric</td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Global</span></td>
+            <td class="chain-cell pf-fail">3 datacenter ops</td>
+            <td class="chain-cell pf-na">Unknown</td>
+            <td class="chain-cell pf-na">Unknown</td>
+            <td class="chain-cell pf-na">Consortium sites</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Client Diversity</td>
+            <td class="chain-cell">1 client, no spec</td>
+            <td class="chain-cell eth-col"><span class="pf-pass">5 EL + 6 CL, has spec</span></td>
+            <td class="chain-cell pf-fail">1 client, no spec</td>
+            <td class="chain-cell pf-fail">1 client, no spec</td>
+            <td class="chain-cell pf-fail">1 client, no spec</td>
+            <td class="chain-cell pf-fail">1 (DAML)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">"Foundation Disappearance Test"<span class="info-icon" title="Could the network continue operating if the founding organization disappeared?">?</span></td>
+            <td class="chain-cell"><span class="pf-pass">PASS</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">PASS</span></td>
+            <td class="chain-cell"><span class="pf-fail">FAIL</span></td>
+            <td class="chain-cell"><span class="pf-semi">SEMI-PASS</span></td>
+            <td class="chain-cell"><span class="pf-fail">FAIL</span></td>
+            <td class="chain-cell"><span class="pf-fail">FAIL</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Validator Subsidization</td>
+            <td class="chain-cell"><span class="pf-pass">None</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">None</span></td>
+            <td class="chain-cell"><span class="pf-fail">53% subsidized</span></td>
+            <td class="chain-cell"><span class="pf-pass">None</span></td>
+            <td class="chain-cell"><span class="pf-pass">None</span></td>
+            <td class="chain-cell pf-na">N/A</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Solidity / EVM Compatible</td>
+            <td class="chain-cell"><span class="pf-na">No</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Native</span></td>
+            <td class="chain-cell"><span class="pf-semi">Via Neon (bridge)</span></td>
+            <td class="chain-cell"><span class="pf-pass">Yes (EVM fork)</span></td>
+            <td class="chain-cell"><span class="pf-semi">EVM sidechain</span></td>
+            <td class="chain-cell"><span class="pf-fail">No &mdash; DAML only</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <h3>Analyst Notes</h3>
+      <ul>
+        <li><strong>Ethereum's operator count (74,000+) is orders of magnitude larger than any competitor.</strong> This is the single most important decentralization metric for institutional risk assessment &mdash; more independent operators means more resilience against coordinated attacks, regulatory seizure, and infrastructure failure.</li>
+        <li><strong>Solana's SWQoS mechanism</strong> (Stake-Weighted Quality of Service) means that validator count alone overstates decentralization. In practice, smaller validators have significantly reduced network influence, centralizing effective control.</li>
+        <li><strong>Canton's consortium model</strong> means there is no permissionless participation. Institutional users must be approved by Digital Asset Holdings. This creates counterparty risk on a single for-profit entity.</li>
+        <li><strong>Ripple's 73.8% foundation holdings</strong> represent the most concentrated token distribution of any major network. The network is effectively controlled by a single company.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- INFRASTRUCTURE -->
+  <div class="section" id="infrastructure">
+    <h2 class="section-title">Infrastructure Requirements & Barriers to Entry</h2>
+    <p class="section-desc">Hardware costs, bandwidth requirements, and storage demands for running validator infrastructure.</p>
+
+    <div class="two-col">
+      <div class="chart-section">
+        <div class="chart-title">Monthly Validator Hardware Cost (USD)</div>
+        <div class="bar-row">
+          <div class="bar-label">Bitcoin</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:30px">N/A</div></div>
+          <div class="bar-value">PoW mining</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ethereum</div>
+          <div class="bar-track"><div class="bar-fill" style="width:5.5%;background:var(--green);min-width:50px">$593</div></div>
+          <div class="bar-value">$593/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Solana</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--red)">$6,300 &ndash; $10,800</div></div>
+          <div class="bar-value">$6.3k&ndash;$10.8k/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Tron</div>
+          <div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--red)">$5,200 &ndash; $9,700</div></div>
+          <div class="bar-value">$5.2k&ndash;$9.7k/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ripple</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.6%;background:var(--green);min-width:40px">$713</div></div>
+          <div class="bar-value">$713/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Canton</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:55px">Undisclosed</div></div>
+          <div class="bar-value">Consortium</div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title">Monthly Bandwidth Requirements</div>
+        <div class="bar-row">
+          <div class="bar-label">Bitcoin</div>
+          <div class="bar-track"><div class="bar-fill" style="width:1.5%;background:var(--green);min-width:45px">1.5 TB</div></div>
+          <div class="bar-value">1.5 TB/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ethereum</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.72%;background:var(--green);min-width:50px">720 GB</div></div>
+          <div class="bar-value">720 GB/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Solana</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--red)">50 &ndash; 100 TB</div></div>
+          <div class="bar-value">50&ndash;100 TB/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Tron</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--red)">50 &ndash; 100 TB</div></div>
+          <div class="bar-value">50&ndash;100 TB/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ripple</div>
+          <div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--green);min-width:35px">1 TB</div></div>
+          <div class="bar-value">1 TB/mo</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Canton</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:55px">Undisclosed</div></div>
+          <div class="bar-value">Consortium</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Validator Stake Requirement</td>
+            <td class="chain-cell pf-na">N/A (PoW)</td>
+            <td class="chain-cell eth-col">32 ETH</td>
+            <td class="chain-cell"><span class="pf-fail">~$2.5M in SOL</span></td>
+            <td class="chain-cell">9,999 TRX</td>
+            <td class="chain-cell">0 (Permissioned)</td>
+            <td class="chain-cell pf-na">N/A (Consortium)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Ledger Size</td>
+            <td class="chain-cell">0.66 TB</td>
+            <td class="chain-cell eth-col">1.3 TB</td>
+            <td class="chain-cell">2 TB</td>
+            <td class="chain-cell">2.8 TB</td>
+            <td class="chain-cell">35 TB</td>
+            <td class="chain-cell pf-na">Undisclosed</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Annual State Growth</td>
+            <td class="chain-cell"><span class="pf-pass">+90 GB/yr</span></td>
+            <td class="chain-cell eth-col">+220 GB/yr</td>
+            <td class="chain-cell"><span class="pf-fail">+80&ndash;95 TB/yr</span></td>
+            <td class="chain-cell">+660 GB/yr</td>
+            <td class="chain-cell"><span class="pf-fail">+4.5 TB/yr</span></td>
+            <td class="chain-cell pf-na">Undisclosed</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Lifetime Downtime</td>
+            <td class="chain-cell">108 hrs 8 min</td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">0</span></td>
+            <td class="chain-cell"><span class="badge badge-red">160+ hrs</span></td>
+            <td class="chain-cell">3 hrs 26 min</td>
+            <td class="chain-cell">64 min + 2wk data loss</td>
+            <td class="chain-cell pf-na">Unknown</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Downtime Incidents</td>
+            <td class="chain-cell">1 rollback, 6 halts</td>
+            <td class="chain-cell eth-col"><span class="pf-pass">None</span></td>
+            <td class="chain-cell pf-fail">1 restart, 4 consensus failures, 7 halts, 1 clock drift</td>
+            <td class="chain-cell">Minimal</td>
+            <td class="chain-cell">1 halt, history loss</td>
+            <td class="chain-cell pf-na">ASX offboarded after 3yr deployment</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <h3>Analyst Notes</h3>
+      <ul>
+        <li><strong>Ethereum has zero lifetime downtime</strong> &mdash; the only major blockchain to achieve this. For institutional settlement infrastructure, uptime is non-negotiable. Solana's 160+ hours of downtime across 13 incidents represents significant operational risk.</li>
+        <li><strong>Solana's bandwidth requirements (50&ndash;100 TB/month)</strong> effectively mandate datacenter hosting, which creates single-point-of-failure risk on hosting providers and eliminates the possibility of truly independent validation.</li>
+        <li><strong>Ethereum's low hardware bar ($593/month, 720 GB bandwidth)</strong> enables home validation, which is critical for genuine decentralization and censorship resistance &mdash; properties that institutional users ultimately depend on for settlement finality.</li>
+        <li><strong>Canton's operational track record</strong> includes the Australian Stock Exchange (ASX) abandoning a multi-year, hundreds-of-millions-dollar Canton deployment. No public uptime data is available.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- GOVERNANCE -->
+  <div class="section" id="governance">
+    <h2 class="section-title">Governance & Trust Model</h2>
+    <p class="section-desc">Foundation control, token distribution, corporate structure, and spending transparency.</p>
+
+    <div class="chart-section">
+      <div class="chart-title">Foundation / Insider Token Holdings (% of Current Supply)</div>
+      <div class="bar-row">
+        <div class="bar-label">Bitcoin</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0.5%;background:var(--green);min-width:35px">0%</div></div>
+        <div class="bar-value">0.00%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ethereum</div>
+        <div class="bar-track"><div class="bar-fill" style="width:1%;background:var(--green);min-width:42px">0.35%</div></div>
+        <div class="bar-value">0.35%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Solana</div>
+        <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--amber)">Opaque (est. significant)</div></div>
+        <div class="bar-value">Opaque</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Tron</div>
+        <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--amber)">Opaque</div></div>
+        <div class="bar-value">Opaque</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ripple</div>
+        <div class="bar-track"><div class="bar-fill" style="width:73.8%;background:var(--red)">73.80%</div></div>
+        <div class="bar-value">73.80%</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Canton</div>
+        <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--text-dim)">Digital Asset Holdings controls</div></div>
+        <div class="bar-value">Undisclosed</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Governance Model</td>
+            <td class="chain-cell"><span class="pf-pass">Decentralized</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Decentralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+            <td class="chain-cell"><span class="pf-fail">Centralized</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">For-Profit Company Controls Chain</td>
+            <td class="chain-cell"><span class="pf-pass">No</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">No</span></td>
+            <td class="chain-cell"><span class="pf-fail">Yes (USA C Corp)</span></td>
+            <td class="chain-cell"><span class="pf-pass">No</span></td>
+            <td class="chain-cell"><span class="pf-fail">Yes (USA C Corp)</span></td>
+            <td class="chain-cell"><span class="pf-fail">Yes (Digital Asset Holdings)</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Foundation Spending Transparency</td>
+            <td class="chain-cell"><span class="pf-pass">Clear / N/A</span></td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Clear</span></td>
+            <td class="chain-cell"><span class="pf-fail">Opaque</span></td>
+            <td class="chain-cell"><span class="pf-fail">Opaque</span></td>
+            <td class="chain-cell"><span class="pf-fail">Opaque</span></td>
+            <td class="chain-cell"><span class="pf-fail">Opaque</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Insider Presale (% of Launch Supply)</td>
+            <td class="chain-cell"><span class="pf-pass">0%</span></td>
+            <td class="chain-cell eth-col">17%</td>
+            <td class="chain-cell"><span class="pf-fail">61%</span></td>
+            <td class="chain-cell"><span class="pf-fail">59%</span></td>
+            <td class="chain-cell"><span class="pf-fail">100%</span></td>
+            <td class="chain-cell pf-na">N/A (token launched Nov 2025)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Insider Presale (% of Current Supply)</td>
+            <td class="chain-cell"><span class="pf-pass">0%</span></td>
+            <td class="chain-cell eth-col">10%</td>
+            <td class="chain-cell"><span class="pf-fail">50%</span></td>
+            <td class="chain-cell"><span class="pf-fail">62.3%</span></td>
+            <td class="chain-cell"><span class="pf-fail">100%</span></td>
+            <td class="chain-cell pf-na">Undisclosed</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Major Stakeholders</td>
+            <td class="chain-cell" style="white-space:normal">Satoshi (5.5%), MicroStrategy (2.9%)</td>
+            <td class="chain-cell eth-col" style="white-space:normal">EF (0.002%), Coinbase (0.001%)</td>
+            <td class="chain-cell" style="white-space:normal">FTX Estate, Multicoin, Solana Labs</td>
+            <td class="chain-cell" style="white-space:normal">Justin Sun (2.35%)</td>
+            <td class="chain-cell" style="white-space:normal">Ripple Labs (73.8%), Chris Larson (4.56%)</td>
+            <td class="chain-cell" style="white-space:normal">Digital Asset Holdings, DTCC, Goldman Sachs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <h3>Analyst Notes</h3>
+      <ul>
+        <li><strong>Only Bitcoin and Ethereum pass the "Foundation Disappearance Test"</strong> &mdash; the standard for whether a network could survive if its founding organization ceased to exist. For institutional infrastructure that must operate for decades, this is a critical risk factor.</li>
+        <li><strong>Ripple's 100% insider presale</strong> and 73.8% current foundation holdings mean a single entity effectively controls the supply, price dynamics, and governance of the network. This represents concentrated counterparty risk that institutional compliance teams typically flag.</li>
+        <li><strong>Canton's dependence on Digital Asset Holdings</strong> creates single-company risk. If DAH fails, is acquired, or changes strategy, the entire network's continuity is in question. The ASX experience (3-year deployment abandoned) is a concrete example of this risk materializing.</li>
+        <li><strong>Ethereum's Ethereum Foundation holds 0.35% of supply</strong> &mdash; the lowest foundation holding of any programmable blockchain. Combined with 11 independent client implementations (5 execution + 6 consensus), this represents the most credible "can't be shut down" profile in the industry.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ECOSYSTEM -->
+  <div class="section" id="ecosystem">
+    <h2 class="section-title">Ecosystem & Institutional Adoption</h2>
+    <p class="section-desc">Stablecoin issuance, tokenized assets, total ecosystem value, and primary institutional use cases.</p>
+
+    <div class="chart-section">
+      <div class="chart-title">Stablecoin Total Value Locked</div>
+      <div class="bar-row">
+        <div class="bar-label">Bitcoin</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:30px">N/A</div></div>
+        <div class="bar-value">N/A</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ethereum</div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)">$122.5B</div></div>
+        <div class="bar-value">$122.5B</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Tron</div>
+        <div class="bar-track"><div class="bar-fill" style="width:62.9%;background:var(--purple)">$77.1B</div></div>
+        <div class="bar-value">$77.1B</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Solana</div>
+        <div class="bar-track"><div class="bar-fill" style="width:9.4%;background:var(--amber);min-width:48px">$11.5B</div></div>
+        <div class="bar-value">$11.5B</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Ripple</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0.06%;background:var(--red);min-width:38px">$72M</div></div>
+        <div class="bar-value">$72M</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Canton</div>
+        <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:20px">$0</div></div>
+        <div class="bar-value">$0</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-section">
+        <div class="chart-title">Tokenized Real-World Asset TVL</div>
+        <div class="bar-row">
+          <div class="bar-label">Ethereum</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)">$15.2B</div></div>
+          <div class="bar-value">$15.2B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Solana</div>
+          <div class="bar-track"><div class="bar-fill" style="width:11.2%;background:var(--amber);min-width:48px">$1.7B</div></div>
+          <div class="bar-value">$1.7B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ripple</div>
+          <div class="bar-track"><div class="bar-fill" style="width:3%;background:var(--amber);min-width:55px">$453.6M</div></div>
+          <div class="bar-value">$453.6M</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Tron</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--red);min-width:20px">$0</div></div>
+          <div class="bar-value">$0</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Canton</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--text-dim);min-width:55px">Not listed</div></div>
+          <div class="bar-value">Not listed</div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title">Total Ecosystem Value (Market Cap + On-Chain Assets)</div>
+        <div class="bar-row">
+          <div class="bar-label">Bitcoin</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--amber)">$2.08T</div></div>
+          <div class="bar-value">$2.08T</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ethereum</div>
+          <div class="bar-track"><div class="bar-fill" style="width:34.8%;background:var(--accent)">$723.9B</div></div>
+          <div class="bar-value">$723.9B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Solana</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.7%;background:var(--amber);min-width:55px">$138.4B</div></div>
+          <div class="bar-value">$138.4B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Ripple</div>
+          <div class="bar-track"><div class="bar-fill" style="width:6.2%;background:var(--red);min-width:55px">$129.4B</div></div>
+          <div class="bar-value">$129.4B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Tron</div>
+          <div class="bar-track"><div class="bar-fill" style="width:5.3%;background:var(--red);min-width:55px">$109.6B</div></div>
+          <div class="bar-value">$109.6B</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Canton</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.2%;background:var(--text-dim);min-width:38px">$4.3B</div></div>
+          <div class="bar-value">$4.3B</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Primary Use Case</td>
+            <td class="chain-cell">Store of Value</td>
+            <td class="chain-cell eth-col"><strong>Finance</strong></td>
+            <td class="chain-cell">Memecoins / DeFi</td>
+            <td class="chain-cell">USDT Transfers</td>
+            <td class="chain-cell">RLUSD Payments</td>
+            <td class="chain-cell">Enterprise Settlement</td>
+          </tr>
+          <tr>
+            <td class="metric-label">% Transaction Activity for MEV</td>
+            <td class="chain-cell">Minimal</td>
+            <td class="chain-cell eth-col">0.52%</td>
+            <td class="chain-cell pf-na">Unknown</td>
+            <td class="chain-cell pf-na">Unknown</td>
+            <td class="chain-cell">0%</td>
+            <td class="chain-cell pf-na">N/A</td>
+          </tr>
+          <tr>
+            <td class="metric-label">Institutional MMFs On-Chain</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell eth-col"><span class="pf-pass">JPM, Fidelity, BlackRock, Amundi</span></td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell">DTCC pilot (Treasuries)</td>
+          </tr>
+          <tr>
+            <td class="metric-label">DeFi Liquidity Ecosystem</td>
+            <td class="chain-cell pf-na">Minimal</td>
+            <td class="chain-cell eth-col"><span class="pf-pass">Aave, Curve, Morpho, Uniswap</span></td>
+            <td class="chain-cell">Growing (Marinade, Raydium)</td>
+            <td class="chain-cell">Limited (JustLend)</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell pf-na">None</td>
+          </tr>
+          <tr>
+            <td class="metric-label">DTCC Relationship</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell eth-col">Besu (EF declined pilot seat)</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell pf-na">None</td>
+            <td class="chain-cell"><span class="pf-semi">Investor + pilot ($25M seat)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <h3>Analyst Notes</h3>
+      <ul>
+        <li><strong>Ethereum dominates tokenized assets ($15.2B, 57% market share)</strong> &mdash; nearly 9x the next competitor (Solana at $1.7B). Every major institutional money market fund tokenization (BlackRock BUIDL at $2.24B, Franklin Templeton BENJI at $1.03B, Ondo USDY at $1.21B) has launched on Ethereum as the primary chain. Total tokenized RWA market: $26.4B.</li>
+        <li><strong>Tron's $77.1B stablecoin TVL is driven almost entirely by USDT.</strong> This reflects Tron's role as a low-fee USDT transfer rail, not institutional adoption. Tron has $0 in tokenized real-world assets.</li>
+        <li><strong>Canton's DTCC relationship came through a $25M seat purchase</strong> &mdash; a "pay-to-play" model that doesn't reflect organic adoption. Canton is not listed on RWA.xyz's tracker of 3,020 tokenized assets across 624 products, despite positioning itself as enterprise settlement infrastructure. The next DTCC CEO is from Goldman Sachs, which has Canton holdings, creating potential conflicts.</li>
+        <li><strong>Solana's RWA footprint has grown to $1.7B</strong> (up from $343M), primarily via BlackRock BUIDL and Ondo multi-chain deployments. However, the primary on-chain activity remains memecoins and speculative DeFi. Institutional adoption is driven by product issuers deploying to Solana as one of many chains, not by organic institutional demand for Solana-native infrastructure.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RISK -->
+  <div class="section" id="risk">
+    <h2 class="section-title">Institutional Risk Assessment</h2>
+    <p class="section-desc">Key risk factors for institutions evaluating blockchain infrastructure for capital markets.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Risk Factor</th>
+            <th class="chain-header"><span class="chain-name">Bitcoin</span></th>
+            <th class="chain-header eth-col"><span class="chain-name">Ethereum</span></th>
+            <th class="chain-header"><span class="chain-name">Solana</span></th>
+            <th class="chain-header"><span class="chain-name">Tron</span></th>
+            <th class="chain-header"><span class="chain-name">Ripple</span></th>
+            <th class="chain-header"><span class="chain-name">Canton</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-label">Single-Entity Failure Risk</td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Regulatory Seizure Risk</td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Operational Availability Risk</td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Unknown</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Token Concentration Risk</td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">Critical</span></td>
+            <td class="chain-cell"><span class="badge badge-muted">N/A</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Censorship Risk</td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Smart Contract Maturity Risk</td>
+            <td class="chain-cell"><span class="badge badge-amber">Limited</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Developer Ecosystem Risk</td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td class="metric-label">Vendor Lock-In Risk</td>
+            <td class="chain-cell"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell eth-col"><span class="badge badge-green">Low</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-amber">Medium</span></td>
+            <td class="chain-cell"><span class="badge badge-red">High</span></td>
+            <td class="chain-cell"><span class="badge badge-red">Critical</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <h3>Key Risk Findings</h3>
+      <ul>
+        <li><strong>Ethereum is the only programmable blockchain with low risk across all categories.</strong> Bitcoin shares the low-risk profile but lacks programmability for capital markets applications.</li>
+        <li><strong>Solana's for-profit C Corp structure (USA jurisdiction)</strong> means a single regulatory action, lawsuit, or enforcement order could compromise the entire network's operation. The chain also remains in "mainnet beta" after 5+ years.</li>
+        <li><strong>Canton's vendor lock-in risk is critical.</strong> DAML (Canton's smart contract language) is proprietary, incompatible with Solidity, and controlled by a single company. Migrating off Canton requires complete re-implementation. Internal Etherealize product assessment (March 2026) found Canton's state model "likely breaks 100+ things in Solidity."</li>
+        <li><strong>Ripple's 73.8% foundation holdings</strong> represent the highest concentration risk in the industry. A single entity selling pressure event could destabilize the entire ecosystem's economics.</li>
+        <li><strong>For institutional capital markets infrastructure that must operate for 10&ndash;30+ years,</strong> the combination of permissionless architecture, zero downtime, 11 independent clients, 74,000 operators, and the lowest foundation concentration makes Ethereum the only network that meets enterprise-grade resilience standards on every measured dimension.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="section" id="methodology">
+    <h2 class="section-title">Methodology & Sources</h2>
+    <p class="section-desc">How this dashboard was constructed and where the data comes from.</p>
+
+    <div class="notes" style="margin-top:0">
+      <h3>Data Sources</h3>
+      <ul>
+        <li><strong>Node and validator counts:</strong> On-chain data aggregated from public explorers and network monitoring tools (Q4 2025 &ndash; Q1 2026 snapshots)</li>
+        <li><strong>Hardware and bandwidth requirements:</strong> Derived from official validator documentation and community benchmarks</li>
+        <li><strong>Token distribution:</strong> On-chain analysis via Arkham Intelligence, public foundation disclosures, and SEC filings (Ripple)</li>
+        <li><strong>Stablecoin TVL:</strong> DeFi Llama (live via API, auto-refreshes)</li>
+        <li><strong>Tokenized asset TVL:</strong> RWA.xyz (March 2026 &mdash; $26.4B total market across 624 distributed products on 3,020 assets tracked)</li>
+        <li><strong>Downtime history:</strong> Public incident reports, status page archives, and community documentation</li>
+        <li><strong>Canton-specific data:</strong> Digital Asset Holdings public disclosures, press coverage, and internal competitive intelligence. Canton data is inherently limited due to the network's closed/consortium nature.</li>
+        <li><strong>Governance assessments:</strong> Based on published governance frameworks, foundation bylaws, and observable decision-making patterns</li>
+      </ul>
+    </div>
+
+    <div class="notes">
+      <h3>Scoring Methodology</h3>
+      <ul>
+        <li><strong>Overall grades</strong> reflect suitability for institutional capital markets infrastructure, weighted toward: decentralization (resilience), uptime (availability), ecosystem depth (liquidity), and governance neutrality (counterparty risk).</li>
+        <li><strong>"Foundation Disappearance Test"</strong> evaluates whether the network could continue operating, developing, and maintaining itself if the founding organization (foundation, company, or consortium operator) ceased to exist entirely.</li>
+        <li><strong>Risk ratings</strong> are relative assessments within this peer group, not absolute ratings. "Low" means low relative to other blockchain networks evaluated, not zero risk.</li>
+        <li><strong>Canton is included as the primary enterprise/consortium blockchain competitor.</strong> Many metrics are not directly comparable to public networks. Where data is unavailable due to Canton's closed architecture, this is noted as "Undisclosed" rather than estimated.</li>
+      </ul>
+    </div>
+
+    <div class="notes">
+      <h3>Limitations & Caveats</h3>
+      <ul>
+        <li><strong>Live data:</strong> Total Ecosystem Value (market caps) and Stablecoin TVL are pulled in real-time from CoinGecko and DeFi Llama APIs. Cells marked <span class="live-tag">LIVE</span> update automatically every 5 minutes. All other metrics are static Q1 2026 snapshots.</li>
+        <li>Static metrics (decentralization, infrastructure, governance, risk) change slowly and are verified quarterly. TVL and market cap data should always use the live figures.</li>
+        <li>Solana's Nakamoto coefficient (43&ndash;81) appears favorable but is heavily qualified by SWQoS, which reduces the effective independence of smaller validators. The raw number overstates actual decentralization.</li>
+        <li>Tron and Solana foundation holdings are listed as "Opaque" because the foundations have not made transparent disclosures. Actual insider concentration may be higher than publicly known.</li>
+        <li>Canton's limited public data means many cells show "Undisclosed" or "Unknown." This is itself a relevant data point for institutional due diligence &mdash; opaque infrastructure is harder to audit and assess.</li>
+        <li>This dashboard is produced by Etherealize, which builds institutional infrastructure on Ethereum. While data is sourced from public, verifiable sources, the framing and risk analysis reflect an Ethereum-native perspective. All underlying data points are independently verifiable via the sources listed above.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// === Tab Navigation ===
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: document.querySelector('.nav').offsetTop - 20, behavior: 'smooth' });
+}
+
+// === Live Data Engine ===
+// Chain config: CoinGecko IDs, DeFi Llama names, table column indices, bar chart labels
+const CHAINS = {
+  bitcoin:  { cgId: 'bitcoin',  llama: 'Bitcoin',  col: 1, bar: 'Bitcoin'  },
+  ethereum: { cgId: 'ethereum', llama: 'Ethereum', col: 2, bar: 'Ethereum' },
+  solana:   { cgId: 'solana',   llama: 'Solana',   col: 3, bar: 'Solana'   },
+  tron:     { cgId: 'tron',     llama: 'Tron',     col: 4, bar: 'Tron'     },
+  ripple:   { cgId: 'ripple',   llama: 'Ripple',   col: 5, bar: 'Ripple'   },
+};
+// Only update stablecoin TVL for chains with meaningful values (skip Bitcoin=N/A, Canton=$0)
+const STABLE_CHAINS = ['ethereum', 'solana', 'tron', 'ripple'];
+
+function fmt(v) {
+  if (v >= 1e12) return '$' + (v / 1e12).toFixed(2) + 'T';
+  if (v >= 1e9)  return '$' + (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6)  return '$' + (v / 1e6).toFixed(0) + 'M';
+  return '$' + Math.round(v).toLocaleString();
+}
+
+// Find a table row within a section by metric label text
+function findRow(sectionId, metricText) {
+  var el = document.getElementById(sectionId);
+  if (!el) return null;
+  var rows = el.querySelectorAll('tr');
+  for (var i = 0; i < rows.length; i++) {
+    var label = rows[i].querySelector('.metric-label');
+    if (label && label.textContent.indexOf(metricText) !== -1) return rows[i];
+  }
+  return null;
+}
+
+// Update a cell in a row, preserving eth-col class
+function setCell(row, col, html) {
+  if (!row) return;
+  var td = row.querySelectorAll('td')[col];
+  if (!td) return;
+  var isEth = td.classList.contains('eth-col');
+  td.innerHTML = html;
+  td.className = 'chain-cell';
+  if (isEth) td.classList.add('eth-col');
+}
+
+// Update all bars in a chart section matching a title
+function setBars(sectionId, chartTitle, values) {
+  var sec = document.getElementById(sectionId);
+  if (!sec) return;
+  var charts = sec.querySelectorAll('.chart-section');
+  for (var c = 0; c < charts.length; c++) {
+    var title = charts[c].querySelector('.chart-title');
+    if (!title || title.textContent.indexOf(chartTitle) === -1) continue;
+
+    var vals = [];
+    for (var k in values) { if (values[k] > 0) vals.push(values[k]); }
+    var maxVal = Math.max.apply(null, vals.length ? vals : [1]);
+
+    var rows = charts[c].querySelectorAll('.bar-row');
+    for (var r = 0; r < rows.length; r++) {
+      var label = rows[r].querySelector('.bar-label');
+      if (!label) continue;
+      var name = label.textContent.trim();
+      if (!(name in values)) continue;
+
+      var val = values[name];
+      var fill = rows[r].querySelector('.bar-fill');
+      var valEl = rows[r].querySelector('.bar-value');
+
+      if (fill && val > 0) {
+        var pct = Math.max(1, (val / maxVal) * 100);
+        fill.style.width = pct + '%';
+        fill.textContent = fmt(val);
+        fill.style.minWidth = pct < 5 ? '55px' : '';
+      }
+      if (valEl && val > 0) valEl.textContent = fmt(val);
+    }
+    break;
+  }
+}
+
+// Fetch JSON with error handling
+function fetchJSON(url) {
+  return fetch(url).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  });
+}
+
+// === Main Refresh ===
+var _refreshing = false;
+
+function refreshDashboard() {
+  if (_refreshing) return;
+  _refreshing = true;
+
+  var btn = document.getElementById('refresh-btn');
+  var status = document.getElementById('data-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+
+  var cgIds = [];
+  for (var k in CHAINS) cgIds.push(CHAINS[k].cgId);
+
+  Promise.allSettled([
+    fetchJSON('https://api.coingecko.com/api/v3/simple/price?ids=' + cgIds.join(',') + '&vs_currencies=usd&include_market_cap=true'),
+    fetchJSON('https://stablecoins.llama.fi/stablecoinchains'),
+  ]).then(function(results) {
+    var mcapRes = results[0];
+    var stablesRes = results[1];
+    var ok = 0;
+
+    // --- Market Caps → Total Ecosystem Value ---
+    if (mcapRes.status === 'fulfilled') {
+      ok++;
+      var data = mcapRes.value;
+      var vals = {}, barVals = {}, maxMcap = 0;
+
+      for (var key in CHAINS) {
+        var cfg = CHAINS[key];
+        var d = data[cfg.cgId];
+        if (d && d.usd_market_cap) {
+          vals[key] = d.usd_market_cap;
+          barVals[cfg.bar] = d.usd_market_cap;
+          if (d.usd_market_cap > maxMcap) maxMcap = d.usd_market_cap;
+        }
+      }
+
+      var row = findRow('overview', 'Total Ecosystem Value');
+      for (var key in CHAINS) {
+        if (!vals[key]) continue;
+        var cfg = CHAINS[key];
+        var s = fmt(vals[key]);
+        var bold = vals[key] === maxMcap;
+        setCell(row, cfg.col, (bold ? '<strong>' + s + '</strong>' : s) + ' <span class="live-tag">LIVE</span>');
+      }
+
+      setBars('ecosystem', 'Total Ecosystem Value', barVals);
+    }
+
+    // --- Stablecoin TVL ---
+    if (stablesRes.status === 'fulfilled') {
+      ok++;
+      var entries = stablesRes.value;
+      var vals = {}, barVals = {}, maxStable = 0;
+
+      for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i];
+        for (var j = 0; j < STABLE_CHAINS.length; j++) {
+          var key = STABLE_CHAINS[j];
+          var cfg = CHAINS[key];
+          if (entry.name === cfg.llama) {
+            var v = (entry.totalCirculatingUSD && entry.totalCirculatingUSD.peggedUSD) || 0;
+            if (v > 0) {
+              vals[key] = v;
+              barVals[cfg.bar] = v;
+              if (v > maxStable) maxStable = v;
+            }
+          }
+        }
+      }
+
+      var row = findRow('overview', 'Stablecoin TVL');
+      for (var j = 0; j < STABLE_CHAINS.length; j++) {
+        var key = STABLE_CHAINS[j];
+        if (!vals[key]) continue;
+        var cfg = CHAINS[key];
+        var s = fmt(vals[key]);
+        var bold = vals[key] === maxStable;
+        setCell(row, cfg.col, (bold ? '<strong>' + s + '</strong>' : s) + ' <span class="live-tag">LIVE</span>');
+      }
+
+      setBars('ecosystem', 'Stablecoin Total Value Locked', barVals);
+    }
+
+    // --- Update header status ---
+    var time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (status) {
+      if (ok > 0) {
+        status.innerHTML = '<span class="live-indicator"><span class="live-dot"></span></span> Updated ' + time + (ok < 2 ? ' (partial)' : '');
+      } else {
+        status.textContent = 'Live data unavailable \u2014 showing static data';
+      }
+    }
+  }).catch(function(err) {
+    console.error('Dashboard refresh error:', err);
+    if (status) status.textContent = 'Live data unavailable \u2014 showing static data';
+  }).finally(function() {
+    if (btn) { btn.disabled = false; btn.textContent = 'Refresh'; }
+    _refreshing = false;
+  });
+}
+
+// Auto-refresh on load + every 5 minutes
+refreshDashboard();
+setInterval(refreshDashboard, 300000);
+</script>
+
+</body>
+</html>
